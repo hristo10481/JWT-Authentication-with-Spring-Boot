@@ -1,0 +1,229 @@
+# Cleverpine Microservices Template Project
+
+## Description
+
+* This is the template project for all CleverPine microservices, based on API-first driven development.
+* This includes one main project with at least 2 maven submodules, namely **template-api** and **template-service**.
+* **N.B. The module names should be identical to the folder names inside the main project directory**
+
+### template-api
+
+* Contains a YML configuration document formatted according to the OpenAPI standards.
+* Responsible **only** for generating the _controller interfaces_ and _models_ for this particular microservice.
+* There can be more than 1 of these maven modules, but those will only be used to generate the _models_ of a consuming microservice.
+
+### template-service
+
+Spring Boot application which will contain the business logic of the microservice and provide a REST API conforming to an OpenAPI YML
+configuration file.
+
+## Setup
+
+**N.B. Consider all examples in this section to be as if you're writing the User Microservice.**
+
+### Cloning the project
+
+To start with, clone the project: `git clone --recurse-submodules git@ssh.dev.azure.com:v3/cleverpine/Back-end%20Solutions/template-main`
+
+### Configuring maven modules
+
+* Open the project in IntelliJ using File->New->Project from Existing sources and choosing the pom of the main(parent) project.
+* First, rename the main(project) module by using IntelliJ's Refactor->Rename on the main(project) directory.
+* Second, rename the main(project) directory to whatever you like.
+* After that rename the two submodules by using IntelliJ's Refactor->Rename and choosing _Rename module and directory_ on the directories **
+  template-api** and **template-service**.
+
+### Configuring poms
+
+#### Main(parent) project pom
+
+##### `<project>`
+
+In this section you should change `<artifactId>`, `<name>` and `<description>` accordingly.
+For example:
+
+* `<artifactId>` = user
+* `<name>` = user
+* `<description>` = User Microservice
+
+**Remember that "user" serves only as an example. You should give an appropriate name to your app according to its purpose.**
+
+##### `<properties>`
+
+In this section you should change `<parent-project.name>`, `<service-project.name>` and `<api-project.name>`.
+For example:
+
+* `<parent-project.name>` = user
+* `<service-project.name>` = user-service
+* `<api-project.name>` = user-api
+
+#### template-api pom
+
+##### `parent`
+
+In this section make sure the `<parent.artifactId>` matches the `<artifactId>` value in the parent pom.
+
+##### `<plugins>`
+
+The OpenAPI Maven plugin requires no additional configuration but can be configured for specific cases.
+
+* `<inputSpec>` specifies the path to the OpenAPI YML configuration file
+* `<apiPackage>` specifies where the api classes will be generated
+    * When creating a maven module for generating classes for a consuming microservice, this property should be deleted, because we will
+      only need the models
+* `<modelPackage>` specifies where the model classes will be generated
+
+#### template-service pom
+
+##### `<parent>`
+
+In this section make sure the `<parent.artifactId>` matches the `<artifactId>` value in the parent pom.
+
+##### `<dependencies>`
+
+In this section change the `<artifactId>` of `com.cleverpine.template-api` dependency to the same value as `<api-project.name>`. In our
+example case: `user-api`
+
+* **DO NOT USE A PLACEHOLDER AS IT WILL NOT WORK. USE THE ACTUAL VALUE**
+
+### Configuring git submodule
+
+* Delete `.git` folder and `.gitmodules` file from the main(parent) project directory
+* Save the YML configuration file(template-service/src/main/resources/static/template-api-yml-configuration/template-api.yml) somewhere
+* Delete template-service/src/main/resources/static/template-api-yml-configuration
+
+* You will need two empty git repositories in Azure: one for the service app and one for the YML configuration.
+  **N.B. For the name of the YML configuration repository replace _template_ with the name of the microservice, e.g. _
+  user-api-yml-configuration_**
+
+* Rename the YML configuration file and edit its contents to describe the appropriate microservice.
+    * You can edit the info title and description, tags
+    * The endpoint can be left as it is, it will only serve as a proof that the classes are generated correctly
+* Push the YML configuration file in its respective repository.
+* Next in template-service/src/main/resources/static directory add a git submodule for the YMl configuration file
+  by running `git submodule add <clone url of the configuration repository>`.
+* After that follow the "Push an existing repository from command line" instructions from the main Azure repository.
+
+### Configuring template-service's application.yml
+
+* `springdoc.swagger-ui.url` should point to the YML configuration file in the git submodule.
+* With this property we specify that `/swagger-ui/index.html` endpoint should return our YML configuration file, instead of the one
+  generated by default.
+* It takes `template-service/src/main/resources/static` as the base directory, so if we want to configure it for the User Microservice the
+  property's value should be changed to: `/user-api-yml-configuration/user-api.yml`
+
+### Editing the template-service classes and packages
+
+* First in the main project directory run: `mvn clean install`
+    * There will be some errors but the `template-api` dependency should have been correctly added to `template-service`'s dependencies and
+      the generated classes should now be on the classpath
+* Next, in IntelliJ, run "Reload All Maven Projects" in order to sync the dependencies between the modules
+* The models from the YML configuration file `Template` and `ErrorResponse` are used by some classes of the **template-service**.
+  The folder in which they are generated will be different after changing the pom properties so make sure to go through the classes and fix
+  the imports of those model classes.
+* After changing the models in the YML configuration, the generated API class will have a different name so make sure to
+  adjust `TemplateController` accordingly.
+* The `TemplateApplication` class should also be renamed accordingly.
+* Finally, rename the package `com.cleverpine.template` to an appropriate one such as, for example: `com.cleverpine.user`
+
+### Configuring Authorization
+
+The template has an authentication filter which expects bearer JWT tokens that contain:
+
+- email - the email of the authenticated user
+- username - the username of the authenticated user
+- list of roles - a list of strings with the user roles
+
+**Important!** If using 'decodingAuthTokenConfig' bean(default) from `com.cleverpine.template.com.internship.mareshkiFinance.config.ViravaHelperConfig` only the basic structure of the token is validated. It is expected that the validity and authenticity of the token is checked by an API Gateway
+
+If the template us used without an API Gateway use 'verifyingAuthTokenConfig' bean instead. It will enable the JWT verification. You will need to add `auth.token.secret` and `auth.token.issuer` to the application.yaml.
+
+The paths of the aforementioned fields are configurable in the `template-service` application.yml
+
+```
+auth:
+  token:
+    usernamePath: preferred_username
+    emailPath: email
+    rolesPath: resource_access.account.roles
+    ## remove the secret and issuer if working with an API Gateway
+    secret: jwt_secret
+    issuer: issuer_name
+```
+
+The default configuration corresponds to the token:
+
+```
+eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI4V0xHZFA0RTVFU1c0c2dZZTduRDQwOGQtWHI4Q1VhZkZQUzdwMGhLQ3FvIn0.eyJleHAiOjE2Mzk0MjU5NzQsImlhdCI6MTYzOTQxNTE3NCwianRpIjoiNWU4ZGFkMTctNGY0NS00NmViLWE0NWYtZTY5OTAwYTQ4M2Y3IiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hay50aGVwaW5lc2xhYi5uZXQvYXV0aC9yZWFsbXMvbXlyZWFsbSIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiIyZWE5NjBjNC04ZjBjLTRiZGQtOWJkMS01MTdjNzhmMGE2NTEiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJtb2JpbGUtdGVzdCIsInNlc3Npb25fc3RhdGUiOiJjNThmNWYyYi05MGJiLTRiNDctYjY0Ny0zOTc5YmQyMmZmYmUiLCJhY3IiOiIxIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtbXlyZWFsbSIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgZW1haWwiLCJzaWQiOiJjNThmNWYyYi05MGJiLTRiNDctYjY0Ny0zOTc5YmQyMmZmYmUiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6InRlc3QxMjMiLCJlbWFpbCI6InRlc3QxMjNAY2xldmVycGluZS5jb20ifQ.fg8We-VORhB6KV96xrZ3E9c2DZl0o7axo3qBIGyPNY5U8-Fblk6iJzqFw3Ju7_XB9yyzq6lCKiDN5Hnk04neh1HIajlkJ-i3avqD-bEPTNV63zbt3L3fxK6Q4wrKQEPqQqfPej1on6_xU6PlifKQgMI7pC2m7JTxQ0evWZKeERP3OSSI6_x_Sd9mBsuLW8KxQXy1GcbjK9oBI-nVQXUlSZ72E-DlZNNGmpW65SdrwS7CP-TNAclJT08s7skFKcVkYy3RAtTg8YTS6WPauC0SEIgnjuF-c5DCekdsNDKyB8MfcDTsT4GWqZTpkBD0rX2pXZPliSbHbHMWSiMth_dVgA
+```
+
+### Configuring Role Mapping
+
+In order to check the required roles for a method use the `@Secured` annotation.
+Example:
+
+```
+    @Secured({Authority.ROLE.USER, Authority.ROLE.ADMIN})
+    public ResponseEntity<Template> getTemplate() {
+      //Method body here
+    }
+```
+
+In order to configure the available roles you have to:
+
+1. Add them to the Authority enum.
+
+```
+public enum Authority implements GrantedAuthority {
+
+  USER(ROLE.USER),
+  ADMIN(ROLE.ADMIN);
+
+  private final String authority;
+
+  public static class ROLE {
+    public static final String USER = "ROLE_USER";
+    public static final String ADMIN = "ROLE_ADMIN";
+  }
+
+}
+```
+
+Please note that the string is not set directly, but instead a constant is used. This is because the annotations only allow static strings
+as parameters.
+
+Also note that the role stings start with `ROLE_` and are all uppercase. This is a requirement by Spring Security.
+
+2. Add them to the application.yml in template-service in the auth.token.roleMapping section.
+   The key should be the value of the authority filed in the Authority enum (the mapping is case-insensitive) and the value is the
+   corresponding token role (also case-insensitive).
+
+```
+auth:
+  token:
+    roleMapping:
+      role_user: view-profile
+      role_admin: manage-account
+```
+
+#Configuring internationalization
+This project is set up to include translations. The default language is English. For each new language create a
+new file with the appropriate name in the _resources_ folder. An example of how the localization works can be
+seen in the SystemController. Locale is determined by the _Accept-Language Header._ 
+
+## Running the project
+
+* In the main project directory run: `mvn clean install`
+* In the **template-service** directory run: `mvn spring-boot:run`
+
+## Testing the project
+
+* If everything is configured correctly `localhost:8080/swagger-ui/index.html` should open the Swagger UI page
+* We can test the service by sending a request to `localhost:8080/template`
+    * Before that you should click `Authorize` from the Swagger UI page, and paste in a valid JWT token
+
+### IntelliJ setup
+
+In Run/Debug Configurations -> Before Launch -> Add Maven Goal -> clean compile.
+
+* Make sure the goal is executed for the main project

@@ -1,0 +1,21 @@
+springdoc:
+  swagger-ui:
+    url: /template-api-yml-configuration/template-api.yml
+auth:
+  token:
+    usernamePath: preferred_username
+    rolesPath: resource_access.account.roles
+    ## remove the secret and issuer if working with an API Gateway
+    secret: jwt_secret
+    issuer: issuer_name
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mareshki
+    username: root
+    password:
+  liquibase:
+    change-log: classpath:liquibase-changeLog.xml
+    default-schema: mareshki
+    enabled: true
+jwt:
+  secretKey: "KoUY1mBsirZsaU3KbESkHvR424hrF4OM"
