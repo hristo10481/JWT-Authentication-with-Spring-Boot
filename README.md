@@ -10,25 +10,25 @@ This is a Spring Boot project that utilizes Maven and provides the following fun
 
 ## Endpoints
 ### Register
-#### Endpoint: /api/users/register
-#### Method: POST
-#### Description: Registers a new user with temporary JW token.
+* Endpoint: /api/users/register
+*  Method: POST
+*  Description: Registers a new user with temporary JW token.
 ### Login
-#### Endpoint: /api/users/login
-#### Method: POST
-#### Description: Logs in a user and returns a JWT token.
+*  Endpoint: /api/users/login
+*  Method: POST
+*  Description: Logs in a user and returns a JWT token.
 ### Update Profile
-#### Endpoint: /api/users/:userId
-#### Method: PUT
-#### Description: Updates the user's profile information.
+*  Endpoint: /api/users/:userId
+*  Method: PUT
+*  Description: Updates the user's profile information.
 ### View Profile
-#### Endpoint: /api/users/:userId
-#### Method: GET
-#### Description: Retrieves the user's profile information.
+*  Endpoint: /api/users/:userId
+*  Method: GET
+*  Description: Retrieves the user's profile information.
 ### Upload Avatar/Profile Picture
-#### Endpoint: /api/users/:userId/avatar
-#### Method: POST
-#### Description: Uploads an avatare for the user.
+*  Endpoint: /api/users/:userId/avatar
+*  Method: POST
+*  Description: Uploads an avatare for the user.
 
 ## Prerequisites
 To start and work with this project, you need to have the following installed:
